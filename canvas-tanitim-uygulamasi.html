@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Şüpheli İfade Dedektifi – Proje Demosu</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#1b1f2a;--mut:#5d6578;--bd:#dfe3ec;--ac:#3b5bdb;--acbg:#e8edff;
+--c1:#ffd8a8;--c2:#ffc9c9;--c3:#d0bfff;--c4:#a5d8ff;--c5:#b2f2bb;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12141b;--card:#1c1f2a;--tx:#e8eaf2;--mut:#a0a8bd;--bd:#2f3445;--ac:#8fa6ff;--acbg:#262c4a;
+--c1:#7a4a12;--c2:#7a2323;--c3:#4b3a8a;--c4:#1d4f7a;--c5:#1f6a2f}}
+:root[data-theme="dark"]{--bg:#12141b;--card:#1c1f2a;--tx:#e8eaf2;--mut:#a0a8bd;--bd:#2f3445;--ac:#8fa6ff;--acbg:#262c4a;
+--c1:#7a4a12;--c2:#7a2323;--c3:#4b3a8a;--c4:#1d4f7a;--c5:#1f6a2f}
+html{color-scheme:light dark;scroll-padding-top:env(safe-area-inset-top,0px)}
+:root[data-theme="dark"]{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{font-size:1.05rem;margin:0 0 10px}
+textarea{width:100%;min-height:130px;padding:12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit;resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+button{font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 14px;border-radius:10px;cursor:pointer}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}
+:root[data-theme="dark"] button.p,:root:not([data-theme="light"]) button.p{color:#0d1020}
+@media (prefers-color-scheme:light){button.p{color:#fff}}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.meter{height:16px;border-radius:99px;background:var(--bd);overflow:hidden}
+.meter>i{display:block;height:100%;width:0;transition:width .5s,background .5s}
+.score{font-size:2rem;font-weight:700}
+.lbl{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.85rem;font-weight:600;background:var(--acbg);color:var(--ac)}
+.out{white-space:pre-wrap;line-height:1.9}
+mark{padding:2px 4px;border-radius:5px;color:inherit;cursor:pointer;border-bottom:2px solid transparent}
+mark.on{border-bottom-color:var(--tx)}
+.k1{background:var(--c1)}.k2{background:var(--c2)}.k3{background:var(--c3)}.k4{background:var(--c4)}.k5{background:var(--c5)}
+.legend span{display:inline-block;margin:0 6px 6px 0;padding:2px 10px;border-radius:99px;font-size:.82rem}
+.why{border-left:4px solid var(--ac);padding:8px 12px;background:var(--acbg);border-radius:0 10px 10px 0;margin-top:10px}
+.bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:.9rem}
+.bar b{width:150px;font-weight:500}
+.bar div{flex:1;height:10px;background:var(--bd);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ac)}
+.bar em{width:38px;text-align:right;font-style:normal;color:var(--mut)}
+ul.cq{margin:6px 0 0;padding-left:20px}
+.note{font-size:.82rem;color:var(--mut)}
+.hide{display:none}
+.fl{margin:4px 0;padding:6px 10px;border-radius:8px;background:var(--acbg)}
+.fl.w{background:var(--c1)}.fl.b{background:var(--c2)}.fl.g{background:var(--c5)}
+a.btn{display:inline-block;font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 14px;border-radius:10px;text-decoration:none}
+.vd{font-size:1.2rem;font-weight:700;margin:10px 0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔎 Şüpheli İfade Dedektifi</h1>
+  <p class="sub">Türkçe manipülatif metin tespiti ve eğitsel doğrulama sistemi · Prototip (lise düzeyi)</p>
+
+  <div class="card">
+    <h2>1. Metni yapıştır</h2>
+    <textarea id="inp" placeholder="Bir paylaşım metni veya haber bağlantısı (https://…) yapıştır…"></textarea>
+    <div class="row">
+      <button class="p" id="go">Analiz et</button>
+      <button data-s="0">Örnek 1</button><button data-s="1">Örnek 2</button><button data-s="2">Örnek 3 (nötr)</button>
+      <button id="clr">Temizle</button>
+    </div>
+  </div>
+
+  <div id="res" class="hide">
+    <div class="card hide" id="lk">
+      <h2>🔗 Bağlantı kontrolü</h2>
+      <div id="lkinfo"></div>
+      <p style="margin:12px 0 4px"><b>Haberin metni</b> <span class="note">(bağlantıyı açıp haberi kopyala, buraya yapıştır; Claude bunu inceler)</span></p>
+      <textarea id="lkt" style="min-height:90px" placeholder="Haberin metnini buraya yapıştır…"></textarea>
+      <div class="row" id="lkbtn"></div>
+      <div id="lkout"></div>
+      <p class="note">Sunucu adresi tanımlı değilse sayfa bağlantının içeriğini indiremez; haber metnini kutuya yapıştırman gerekir.</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h2>2. Manipülasyon olasılığı</h2>
+        <div class="score" id="sc">0%</div>
+        <div class="meter"><i id="mt"></i></div>
+        <p style="margin:10px 0 0"><span class="lbl" id="lb"></span></p>
+        <p class="note" id="nt"></p>
+      </div>
+      <div class="card">
+        <h2>Öznitelik katkıları (LIME benzeri)</h2>
+        <div id="bars"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. Vurgulanmış metin <span class="note">(bir ifadeye dokun)</span></h2>
+      <div class="legend" id="lg"></div>
+      <div class="out" id="out"></div>
+      <div class="why" id="why">Bir vurguya tıklayarak <b>“Bu ifade neden şüpheli?”</b> sorusunun cevabını gör.</div>
+    </div>
+
+    <div class="card">
+      <h2>4. Eleştirel sorular (CQA)</h2>
+      <p class="note" style="margin-top:0">Walton’un eleştirel soruları: metne güvenmeden önce kendine şunları sor.</p>
+      <div id="cq"></div>
+    </div>
+
+    <div class="card">
+      <h2>5. Doğrulama görevi</h2>
+      <p style="margin-top:0">Metin dışına çık: aşağıdakileri işaretle, ilerleme çubuğunu doldur.</p>
+      <div id="chk"></div>
+      <div class="meter" style="margin-top:8px"><i id="cp" style="background:var(--ac)"></i></div>
+    </div>
+  </div>
+
+  <p class="note">Not: Bu prototip, gerçek sistemin (TF-IDF + Lojistik Regresyon/SVM/RF + LIME/SHAP) davranışını kural tabanlı sözlükle taklit eder. Sonuçlar bilimsel doğruluk iddiası taşımaz; amaç arayüz ve pedagojik akışı göstermektir.</p>
+</div>
+
+<script>
+/* Sunucu sürümünü yayına aldıysan adresini yaz, örn. "https://dedektif.onrender.com". Boş bırakırsan tamamen tarayıcıda çalışır. */
+var BACKEND_URL="";
+var CATS={
+ k1:{n:"Aşırı genelleme",w:1.0,re:["herkes","kimse","asla","hiçbir zaman","her zaman","hepsi","tamamen","kesinlikle","yüzde yüz","%100","bütün (?:gerçek|dünya|millet)"],
+  why:"Mutlak ifadeler (“herkes”, “asla”) istisnaları yok sayar. Gerçek dünyada nadiren %100 doğru bir genelleme vardır.",
+  q:"Bu genellemenin istisnası var mı? Kaç kişiye/olaya bakılarak söyleniyor?"},
+ k2:{n:"Duygu yüklü sözcük",w:0.9,re:["rezalet","skandal","korkunç","felaket","rezil","dehşet","vahim","hain","kahpe","utanç","alçak","yıkım","çılgın"],
+  why:"Güçlü duygu sözcükleri (öfke, korku, tiksinti) mantığını devre dışı bırakıp hızlı tepki vermeni hedefler.",
+  q:"Bu cümlede kanıt mı var, yoksa sadece duygu mu uyandırılıyor?"},
+ k3:{n:"Tıklama tuzağı",w:1.1,re:["şok edici","şoke","inanamayacaksınız","bunu görünce","bakın ne oldu","gizli gerçek","son dakika","ortaya çıktı","kimse bilmiyor","merak ediyor musunuz"],
+  why:"Merak boşluğu yaratır: bilgiyi saklayıp seni tıklamaya veya paylaşmaya iter.",
+  q:"Başlık gerçekte ne söylüyor? Asıl bilgi metnin içinde var mı?"},
+ k4:{n:"Yönlendirici soru / baskı",w:0.9,re:["sizce de","hâlâ mı","hala mı","uyanın","sorgulamıyor musunuz","neden saklıyorlar","hemen paylaş","silinmeden önce","herkese ulaştır","paylaş(?:ın)?\\b"],
+  why:"Soru ya da emir kalıbı cevabı önceden belirler; ‘hemen paylaş’ düşünme süreni kısaltır.",
+  q:"Bu soru tarafsız mı, yoksa tek bir cevaba mı yönlendiriyor?"},
+ k5:{n:"Kaynaksız otorite",w:1.0,re:["uzmanlar (?:diyor|açıkladı|uyarıyor)","bilim insanları (?:açıkladı|kanıtladı)","iddia ediliyor","duyduğuma göre","kaynaklara göre","güvenilir kaynak","bir doktor","ünlü profesör"],
+  why:"‘Uzmanlar’ kim? Adı, kurumu ve bağlantısı verilmeyen otorite göndermesi doğrulanamaz.",
+  q:"Kaynak kim, hangi kurum? Aynı bilgiyi bağımsız bir yerde bulabiliyor musun?"}
+};
+var SAMPLES=[
+ "SON DAKİKA!!! Herkes biliyor ki bu rezalet yıllardır saklanıyor. Uzmanlar diyor ki tamamen zehirli, ama kimse konuşmuyor. Sizce de uyanma vakti gelmedi mi? Silinmeden önce hemen paylaş!",
+ "Şok edici gerçek ortaya çıktı! Bunu görünce inanamayacaksınız. Bilim insanları açıkladı: bu içecek her zaman hastalık yapıyor. Neden saklıyorlar?",
+ "Meteoroloji Genel Müdürlüğü, yarın İstanbul’da yer yer sağanak yağış beklendiğini açıkladı. Sıcaklıkların 14 ile 18 derece arasında değişmesi öngörülüyor."
+];
+var CHECKS=["Aynı haberi en az iki bağımsız kaynakta aradım","Teyit.org / Doğruluk Payı’nda kontrol ettim","Görselin geçmişini ters görsel aramayla denedim","Yayın tarihi ve yazarı kontrol ettim"];
+var $=function(i){return document.getElementById(i)};
+function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+
+function analyze(t){
+  var hits=[],counts={};
+  Object.keys(CATS).forEach(function(k){
+    counts[k]=0;
+    CATS[k].re.forEach(function(p){
+      var r=new RegExp("(?<![\\p{L}])(?:"+p+")\\p{L}*","giu"),m;
+      while((m=r.exec(t))){hits.push({s:m.index,e:m.index+m[0].length,k:k});counts[k]++; if(!m[0].length)r.lastIndex++}
+    });
+  });
+  hits.sort(function(a,b){return a.s-b.s||b.e-a.e});
+  var out=[],last=-1;
+  hits.forEach(function(h){if(h.s>=last){out.push(h);last=h.e}});
+  var words=Math.max(8,t.split(/\s+/).length);
+  var caps=(t.match(/\b[A-ZÇĞİÖŞÜ]{4,}\b/g)||[]).length;
+  var exc=(t.match(/!/g)||[]).length;
+  var f={};
+  Object.keys(CATS).forEach(function(k){f[k]=Math.min(1,(counts[k]*CATS[k].w*10)/words*1.6)});
+  f.punct=Math.min(1,(caps*0.5+Math.max(0,exc-1)*0.4)/3);
+  var z=-2.2+3.2*(f.k1+f.k2+f.k3+f.k4+f.k5)+1.2*f.punct;
+  var p=1/(1+Math.exp(-z));
+  return{hits:out,f:f,p:p,counts:counts,caps:caps,exc:exc};
+}
+
+function render(t){
+  var a=analyze(t),html="",pos=0;
+  a.hits.forEach(function(h,i){
+    html+=esc(t.slice(pos,h.s))+'<mark class="'+h.k+'" data-k="'+h.k+'" data-i="'+i+'">'+esc(t.slice(h.s,h.e))+"</mark>";
+    pos=h.e;
+  });
+  html+=esc(t.slice(pos));
+  $("out").innerHTML=html;
+  var pct=Math.round(a.p*100);
+  $("sc").textContent="%"+pct;
+  var col=pct<35?"#2f9e44":pct<65?"#f08c00":"#e03131";
+  $("mt").style.width=pct+"%";$("mt").style.background=col;
+  $("lb").textContent=pct<35?"Düşük risk":pct<65?"Orta risk – dikkatle oku":"Yüksek risk – doğrula!";
+  $("nt").textContent=a.hits.length+" şüpheli ifade bulundu. Yüksek skor “yanlış” demek değildir; metnin ikna biçimini inceletir.";
+  var names={k1:"Aşırı genelleme",k2:"Duygu yüklü sözcük",k3:"Tıklama tuzağı",k4:"Yönlendirme/baskı",k5:"Kaynaksız otorite",punct:"BÜYÜK HARF / ünlem"};
+  var b="";Object.keys(names).forEach(function(k){var v=Math.round(a.f[k]*100);b+='<div class="bar"><b>'+names[k]+'</b><div><i style="width:'+v+'%"></i></div><em>'+v+'</em></div>'});
+  $("bars").innerHTML=b;
+  var lg="";Object.keys(CATS).forEach(function(k){lg+='<span class="'+k+'">'+CATS[k].n+" ("+a.counts[k]+")</span>"});
+  $("lg").innerHTML=lg;
+  $("why").innerHTML="Bir vurguya tıklayarak <b>“Bu ifade neden şüpheli?”</b> sorusunun cevabını gör.";
+  var cq="",any=false;
+  Object.keys(CATS).forEach(function(k){if(a.counts[k]>0){any=true;cq+='<p style="margin:8px 0 0"><b>'+CATS[k].n+'</b></p><ul class="cq"><li>'+CATS[k].q+"</li></ul>"}});
+  cq+='<p style="margin:10px 0 0"><b>Genel sorular</b></p><ul class="cq"><li>Bu bilgiyi kim, hangi amaçla paylaşıyor?</li><li>Bunu paylaşırsam kime ne kazandırırım?</li></ul>';
+  if(!any)cq='<p>Belirgin bir manipülasyon işareti bulunmadı. Yine de kaynağı sor: <b>Bu bilgiyi kim, hangi kanıtla söylüyor?</b></p>';
+  $("cq").innerHTML=cq;
+  var c="";CHECKS.forEach(function(x,i){c+='<label style="display:block;margin:4px 0"><input type="checkbox" class="ck"> '+x+"</label>"});
+  $("chk").innerHTML=c;$("cp").style.width="0";
+  Array.prototype.forEach.call(document.querySelectorAll(".ck"),function(el){el.onchange=function(){
+    var n=document.querySelectorAll(".ck:checked").length;$("cp").style.width=(n/CHECKS.length*100)+"%"}});
+  renderLinks(t);
+  $("res").classList.remove("hide");
+}
+
+var TRUST=["gov.tr","edu.tr","aa.com.tr","trthaber.com","bbc.com","reuters.com","apnews.com","ntv.com.tr","hurriyet.com.tr","milliyet.com.tr","sabah.com.tr","haberturk.com","cnnturk.com","teyit.org","dogrulukpayi.com"];
+var SHORT=["bit.ly","t.co","tinyurl.com","goo.gl","ow.ly","cutt.ly","is.gd","t.ly","rebrand.ly"];
+function isTrusted(h){return TRUST.some(function(d){return h===d||h.endsWith("."+d)})}
+function addFlag(parent,cls,txt){var d=document.createElement("div");d.className="fl "+cls;d.textContent=txt;parent.appendChild(d)}
+function mkLink(label,href){var a=document.createElement("a");a.className="btn";a.textContent=label;a.href=href;a.target="_blank";a.rel="noopener noreferrer";return a}
+function renderLinks(t){
+  var box=$("lk"),urls=t.match(/https?:\/\/[^\s<>"')]+|www\.[^\s<>"')]+/gi)||[];
+  if(!urls.length){box.classList.add("hide");return}
+  var u=urls[0];if(!/^https?:/i.test(u))u="https://"+u;
+  var host,url;try{url=new URL(u);host=url.hostname.replace(/^www\./,"").toLowerCase()}catch(e){box.classList.add("hide");return}
+  var info=$("lkinfo");info.textContent="";
+  var h=document.createElement("div");h.innerHTML="<b>Alan adı:</b> ";var sp=document.createElement("span");sp.textContent=host;h.appendChild(sp);info.appendChild(h);
+  var bad=0;
+  if(isTrusted(host))addFlag(info,"g","Tanınan kurum/yayın alan adı. Bu, içindeki haberin doğru olduğunu garanti etmez.");
+  else{
+    if(SHORT.indexOf(host)>-1){addFlag(info,"w","Kısaltılmış bağlantı: gerçek adres gizli. Açmadan önce nereye gittiğini öğren.");bad++}
+    if(/\.(xyz|top|click|buzz|icu|monster|cfd|sbs|rest)$/.test(host)){addFlag(info,"w","Sahte/spam sitelerde sık görülen bir alan adı uzantısı.");bad++}
+    if((host.match(/-/g)||[]).length>=3||host.length>35){addFlag(info,"w","Alışılmadık uzun veya çok tireli alan adı.");bad++}
+    if(/(blogspot|wordpress|medium|wixsite|weebly)\./.test(host)){addFlag(info,"w","Ücretsiz blog/barındırma sitesi: kurumsal bir yayın değil.");bad++}
+    var names=["hurriyet","milliyet","sabah","trthaber","haberturk","cnnturk","reuters","bbc","teyit"];
+    for(var i=0;i<names.length;i++){if(host.indexOf(names[i])>-1){addFlag(info,"b","Tanınmış bir yayın adını (“"+names[i]+"”) içeriyor ama resmi alan adı değil: taklit olabilir.");bad++;break}}
+  }
+  if(url.protocol!=="https:"){addFlag(info,"w","Şifresiz (http) bağlantı.");bad++}
+  if(!bad&&!isTrusted(host))addFlag(info,"","Alan adında belirgin bir kırmızı bayrak yok; yine de kaynağı tanımıyorsan doğrula.");
+  var q=t.replace(/https?:\/\/\S+|www\.\S+/gi,"").trim().split(/\s+/).slice(0,8).join(" ");
+  var btn=$("lkbtn");btn.textContent="";
+  if(url.protocol==="https:"&&SHORT.indexOf(host)<0)btn.appendChild(mkLink("Bağlantıyı aç ↗",url.href));
+  var g="https://www.google.com/search?q=";
+  btn.appendChild(mkLink("Teyit.org’da ara",g+encodeURIComponent("site:teyit.org "+(q||host))));
+  btn.appendChild(mkLink("Doğruluk Payı’nda ara",g+encodeURIComponent("site:dogrulukpayi.com "+(q||host))));
+  btn.appendChild(mkLink("Başlığı Google’da ara",g+encodeURIComponent(q||host)));
+  var cb=document.createElement("button");cb.className="p";cb.textContent=BACKEND_URL?"Sunucuda doğrula (haberi indir)":"Haber metnini analiz et";btn.appendChild(cb);
+  var out=$("lkout");out.textContent="";
+  function satir(x,c){var d=document.createElement("div");d.className="fl "+(c||"");d.textContent=x;out.appendChild(d)}
+  cb.onclick=async function(){
+    out.textContent="";
+    var art=$("lkt").value.trim();
+    if(!BACKEND_URL){
+      if(art.length>=40){render(art+" "+u);return}
+      ["Önce haberin metnini yukarıdaki kutuya yapıştır (bağlantıyı aç, metni kopyala).","Başlığı Teyit.org ve Doğruluk Payı’nda ara.","Aynı haberi en az iki bağımsız kaynakta bul.","Yayın tarihi ve yazarı kontrol et."].forEach(function(s){satir(s)});
+      return}
+    satir("Sunucu haberi indirip inceliyor…");cb.disabled=true;
+    try{
+      var r=await fetch(BACKEND_URL.replace(/\/$/,"")+"/api/analiz",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({girdi:art?(u+" "+art):u})});
+      var d=await r.json();if(!r.ok)throw new Error(d.hata||"Hata");
+      out.textContent="";
+      if(d.meta&&d.meta.baslik)satir("Başlık: "+d.meta.baslik);
+      satir("Sunucu skoru: %"+Math.round(d.p*100),d.p>0.65?"b":d.p>0.35?"w":"g");
+      if(d.claude){satir("Karar: "+d.claude.karar,"w");satir(d.claude.gerekce);(d.claude.iddialar||[]).forEach(function(x){satir("• "+x.iddia+" → "+x.not)})}
+      $("lkt").value=d.metin||"";
+      if(d.metin)render(d.metin+" "+u);
+    }catch(e){out.textContent="";satir("Sunucuya ulaşılamadı: "+e.message,"b")}
+    cb.disabled=false;
+  };
+  box.classList.remove("hide");
+}
+$("go").onclick=function(){var t=$("inp").value.trim();if(t)render(t)};
+$("clr").onclick=function(){$("inp").value="";$("res").classList.add("hide")};
+Array.prototype.forEach.call(document.querySelectorAll("[data-s]"),function(b){b.onclick=function(){$("inp").value=SAMPLES[+b.dataset.s];render($("inp").value)}});
+$("out").onclick=function(e){
+  var m=e.target.closest("mark");if(!m)return;
+  Array.prototype.forEach.call(document.querySelectorAll("mark.on"),function(x){x.classList.remove("on")});
+  m.classList.add("on");
+  var c=CATS[m.dataset.k];
+  $("why").innerHTML="<b>“"+esc(m.textContent)+"” → "+c.n+"</b><br>"+c.why+"<br><i>Sor kendine:</i> "+c.q;
+};
+</script>
+</body>
+</html>
